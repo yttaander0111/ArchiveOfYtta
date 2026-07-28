@@ -14,7 +14,7 @@
       padding: 20px;
     }
     .container {
-      max-width: 720px;
+      max-width: 900px;
       margin: 0 auto;
     }
     header {
@@ -35,6 +35,8 @@
       font-variant-numeric: tabular-nums;
       letter-spacing: 1px;
     }
+
+    /* 目录树 */
     .category {
       margin-bottom: 8px;
       background: #fff;
@@ -77,6 +79,7 @@
       padding: 8px 12px;
       border-radius: 8px;
       transition: background 0.15s ease;
+      cursor: pointer;
     }
     .sub-header:hover { background: #f5f9fd; }
     .sub-name {
@@ -144,6 +147,112 @@
     .work-actions button:hover { color: #1e3a5f; background: #dbe8f4; }
     .work-actions button.delete:hover { color: #c45c5c; background: #fce8e8; }
 
+    /* 卡片信息流 */
+    .card-view { display: none; }
+    .card-view.active { display: block; }
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .card-header button {
+      background: #fff;
+      border: 1px solid #d0e0f0;
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 14px;
+      color: #4a6a8a;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .card-header button:hover { background: #e8f1f8; border-color: #a0c0d8; }
+    .card-header h2 {
+      font-size: 18px;
+      font-weight: 500;
+      color: #1e3a5f;
+    }
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(30, 58, 95, 0.06);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      min-height: 140px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(30, 58, 95, 0.12);
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: 500;
+      color: #1e3a5f;
+      text-align: center;
+      transition: opacity 0.25s ease;
+    }
+    .card-summary {
+      position: absolute;
+      inset: 0;
+      padding: 20px;
+      font-size: 13px;
+      color: #4a6a8a;
+      line-height: 1.7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+      background: #fff;
+      overflow: hidden;
+    }
+    .card:hover .card-title { opacity: 0; }
+    .card:hover .card-summary { opacity: 1; }
+    .card-empty {
+      background: #fff;
+      border-radius: 12px;
+      padding: 40px;
+      text-align: center;
+      color: #a0b8d0;
+      font-size: 14px;
+      grid-column: 1 / -1;
+    }
+    .card-actions {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      display: flex;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      z-index: 2;
+    }
+    .card:hover .card-actions { opacity: 1; }
+    .card-actions button {
+      background: rgba(255,255,255,0.9);
+      border: 1px solid #e4edf5;
+      border-radius: 6px;
+      cursor: pointer;
+      padding: 4px;
+      color: #a0b8d0;
+      display: flex;
+      align-items: center;
+    }
+    .card-actions button:hover { color: #1e3a5f; background: #eef4fa; }
+    .card-actions button.delete:hover { color: #c45c5c; background: #fce8e8; }
+
     /* 编辑器 */
     .editor-overlay {
       position: fixed;
@@ -204,7 +313,7 @@
     .editor-body input:focus, .editor-body textarea:focus {
       border-color: #5a9bd5;
     }
-    .editor-body textarea { resize: vertical; min-height: 100px; }
+    .editor-body textarea { resize: vertical; min-height: 80px; }
     .editor-footer {
       display: flex;
       gap: 10px;
@@ -300,7 +409,21 @@
       <h1>鱼的作品集归档</h1>
       <p>ArchiveOfYtta</p>
     </header>
-    <div id="tree"></div>
+
+    <!-- 目录树视图 -->
+    <div id="treeView"></div>
+
+    <!-- 卡片信息流视图 -->
+    <div class="card-view" id="cardView">
+      <div class="card-header">
+        <button onclick="backToTree()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:4px;"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          返回目录
+        </button>
+        <h2 id="cardViewTitle"></h2>
+      </div>
+      <div class="card-grid" id="cardGrid"></div>
+    </div>
   </div>
 
   <!-- 编辑器 -->
@@ -314,6 +437,7 @@
       </div>
       <div class="editor-body">
         <input type="text" id="workTitle" placeholder="作品标题">
+        <input type="text" id="workSummary" placeholder="Summary（悬停时显示的简介，可选）">
         <textarea id="workContent" placeholder="作品内容（可选）"></textarea>
       </div>
       <div class="editor-footer">
@@ -362,9 +486,11 @@
 
     let currentCat = null;
     let currentWorkIndex = -1;
+    let cardViewCat = null;
+    let cardViewSub = null;
 
-    function render() {
-      const tree = document.getElementById('tree');
+    function renderTree() {
+      const tree = document.getElementById('treeView');
       let html = '';
       structure.forEach((cat, ci) => {
         html += `<div class="category">`;
@@ -376,7 +502,7 @@
           html += `<div class="sub-list">`;
           cat.children.forEach((sub, si) => {
             html += `<div class="sub-item">`;
-            html += `<div class="sub-header">`;
+            html += `<div class="sub-header" onclick="openCardView(${ci},${si})">`;
             html += `<span class="sub-name">`;
             html += `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7a9ab8" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
             html += `${sub.name}</span>`;
@@ -388,7 +514,7 @@
               html += `<div class="works-list">`;
               sub.works.forEach((work, wi) => {
                 html += `<div class="work-item">`;
-                html += `<span class="work-title-text" onclick="viewWork(${ci},${si},${wi})">${escapeHtml(work.title)}</span>`;
+                html += `<span class="work-title-text" onclick="event.stopPropagation();viewWork(${ci},${si},${wi})">${escapeHtml(work.title)}</span>`;
                 html += `<span class="work-actions">`;
                 html += `<button onclick="event.stopPropagation();openEdit(${ci},${si},${wi})" title="编辑">`;
                 html += `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
@@ -412,7 +538,46 @@
 
     function toggleCat(ci) {
       structure[ci].open = !structure[ci].open;
-      render();
+      renderTree();
+    }
+
+    function openCardView(ci, si) {
+      cardViewCat = ci;
+      cardViewSub = si;
+      const sub = structure[ci].children[si];
+      document.getElementById('cardViewTitle').textContent = sub.name;
+      renderCards();
+      document.getElementById('treeView').style.display = 'none';
+      document.getElementById('cardView').classList.add('active');
+    }
+
+    function backToTree() {
+      document.getElementById('cardView').classList.remove('active');
+      document.getElementById('treeView').style.display = 'block';
+      cardViewCat = null;
+      cardViewSub = null;
+    }
+
+    function renderCards() {
+      const grid = document.getElementById('cardGrid');
+      const works = structure[cardViewCat].children[cardViewSub].works;
+      if (works.length === 0) {
+        grid.innerHTML = `<div class="card-empty">暂无作品，点击右上角「+」按钮添加</div>`;
+        return;
+      }
+      let html = '';
+      works.forEach((work, wi) => {
+        const summaryText = work.summary ? escapeHtml(work.summary) : (work.content ? escapeHtml(work.content.slice(0, 80)) + (work.content.length > 80 ? '...' : '') : '暂无简介');
+        html += `<div class="card" onclick="viewWork(${cardViewCat},${cardViewSub},${wi})">`;
+        html += `<div class="card-actions">`;
+        html += `<button onclick="event.stopPropagation();openEdit(${cardViewCat},${cardViewSub},${wi})" title="编辑"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
+        html += `<button class="delete" onclick="event.stopPropagation();deleteWork(${cardViewCat},${cardViewSub},${wi})" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>`;
+        html += `</div>`;
+        html += `<div class="card-title">${escapeHtml(work.title)}</div>`;
+        html += `<div class="card-summary">${summaryText}</div>`;
+        html += `</div>`;
+      });
+      grid.innerHTML = html;
     }
 
     function openAdd(ci, si) {
@@ -420,6 +585,7 @@
       currentWorkIndex = -1;
       document.getElementById('editorTitle').textContent = '添加作品 — ' + structure[ci].children[si].name;
       document.getElementById('workTitle').value = '';
+      document.getElementById('workSummary').value = '';
       document.getElementById('workContent').value = '';
       document.getElementById('editorOverlay').classList.add('active');
       document.getElementById('workTitle').focus();
@@ -431,6 +597,7 @@
       const work = structure[ci].children[si].works[wi];
       document.getElementById('editorTitle').textContent = '编辑作品 — ' + work.title;
       document.getElementById('workTitle').value = work.title;
+      document.getElementById('workSummary').value = work.summary || '';
       document.getElementById('workContent').value = work.content || '';
       document.getElementById('editorOverlay').classList.add('active');
     }
@@ -444,22 +611,29 @@
     function saveWork() {
       const title = document.getElementById('workTitle').value.trim();
       if (!title) { alert('请输入作品标题'); return; }
+      const summary = document.getElementById('workSummary').value.trim();
       const content = document.getElementById('workContent').value.trim();
       const works = structure[currentCat.ci].children[currentCat.si].works;
       if (currentWorkIndex >= 0) {
-        works[currentWorkIndex] = { title, content };
+        works[currentWorkIndex] = { title, summary, content };
       } else {
-        works.push({ title, content });
+        works.push({ title, summary, content });
       }
       closeEditor();
-      render();
+      renderTree();
+      if (cardViewCat !== null && cardViewCat === currentCat.ci && cardViewSub === currentCat.si) {
+        renderCards();
+      }
     }
 
     function deleteWork(ci, si, wi) {
       const title = structure[ci].children[si].works[wi].title;
       if (!confirm('确定要删除「' + title + '」吗？')) return;
       structure[ci].children[si].works.splice(wi, 1);
-      render();
+      renderTree();
+      if (cardViewCat !== null && cardViewCat === ci && cardViewSub === si) {
+        renderCards();
+      }
     }
 
     function viewWork(ci, si, wi) {
@@ -486,7 +660,7 @@
       return div.innerHTML;
     }
 
-    render();
+    renderTree();
   </script>
 </body>
 </html>
