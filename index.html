@@ -1,666 +1,674 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>鱼的作品集归档 | ArchiveOfYtta</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
-      background: #f0f6fb;
-      color: #1a1a2e;
-      line-height: 1.6;
-      padding: 20px;
-    }
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-    }
-    header {
-      text-align: center;
-      margin-bottom: 32px;
-      padding: 24px 0;
-    }
-    header h1 {
-      font-size: 32px;
-      font-weight: 500;
-      color: #1e3a5f;
-      margin-bottom: 6px;
-      letter-spacing: 3px;
-    }
-    header p {
-      font-size: 14px;
-      color: #7a9ab8;
-      font-variant-numeric: tabular-nums;
-      letter-spacing: 1px;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>鱼的作品集归档 | ArchiveOfYtta</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: #f0f6fb; color: #1a1a2e; line-height:1.6; padding:20px;
+}
+.container { max-width:900px; margin:0 auto; min-height:calc(100vh - 80px); }
+header { text-align:center; margin-bottom:32px; padding:24px 0; }
+header h1 { font-size:32px; font-weight:500; color:#1e3a5f; margin-bottom:6px; letter-spacing:3px; }
+header p { font-size:14px; color:#7a9ab8; font-variant-numeric:tabular-nums; letter-spacing:1px; }
 
-    /* 目录树 */
-    .category {
-      margin-bottom: 8px;
-      background: #fff;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 1px 3px rgba(30, 58, 95, 0.06);
-    }
-    .cat-header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 14px 18px;
-      cursor: pointer;
-      user-select: none;
-      transition: background 0.15s ease;
-    }
-    .cat-header:hover { background: #e8f1f8; }
-    .cat-arrow {
-      font-size: 12px;
-      color: #5a8ab8;
-      transition: transform 0.2s ease;
-      display: inline-block;
-    }
-    .cat-arrow.open { transform: rotate(90deg); }
-    .cat-name {
-      font-size: 16px;
-      font-weight: 500;
-      color: #1e3a5f;
-    }
-    .sub-list {
-      padding: 0 18px 12px 44px;
-    }
-    .sub-item {
-      margin-bottom: 4px;
-    }
-    .sub-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 12px;
-      border-radius: 8px;
-      transition: background 0.15s ease;
-      cursor: pointer;
-    }
-    .sub-header:hover { background: #f5f9fd; }
-    .sub-name {
-      font-size: 14px;
-      color: #4a6a8a;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .sub-name svg { flex-shrink: 0; }
-    .btn-icon {
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 4px;
-      border-radius: 6px;
-      color: #a0b8d0;
-      opacity: 0;
-      transition: all 0.15s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .sub-header:hover .btn-icon { opacity: 1; }
-    .btn-icon:hover { color: #1e3a5f; background: #e0ecf6; }
-    .works-list {
-      padding-left: 24px;
-      padding-bottom: 4px;
-    }
-    .work-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 6px 10px;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background 0.15s ease;
-    }
-    .work-item:hover { background: #eef4fa; }
-    .work-item:hover .work-actions { opacity: 1; }
-    .work-title-text {
-      font-size: 13px;
-      color: #5a7a9a;
-      flex: 1;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .work-actions {
-      opacity: 0;
-      transition: opacity 0.15s ease;
-      display: flex;
-      gap: 2px;
-    }
-    .work-actions button {
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 3px;
-      border-radius: 4px;
-      color: #a0b8d0;
-      display: flex;
-      align-items: center;
-    }
-    .work-actions button:hover { color: #1e3a5f; background: #dbe8f4; }
-    .work-actions button.delete:hover { color: #c45c5c; background: #fce8e8; }
+.view { display:none; }
+.view.active { display:block; }
 
-    /* 卡片信息流 */
-    .card-view { display: none; }
-    .card-view.active { display: block; }
-    .card-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-    .card-header button {
-      background: #fff;
-      border: 1px solid #d0e0f0;
-      border-radius: 8px;
-      padding: 6px 14px;
-      font-size: 14px;
-      color: #4a6a8a;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-    .card-header button:hover { background: #e8f1f8; border-color: #a0c0d8; }
-    .card-header h2 {
-      font-size: 18px;
-      font-weight: 500;
-      color: #1e3a5f;
-    }
-    .card-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 16px;
-    }
-    .card {
-      background: #fff;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 1px 3px rgba(30, 58, 95, 0.06);
-      cursor: pointer;
-      position: relative;
-      overflow: hidden;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      min-height: 140px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-    .card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(30, 58, 95, 0.12);
-    }
-    .card-title {
-      font-size: 15px;
-      font-weight: 500;
-      color: #1e3a5f;
-      text-align: center;
-      transition: opacity 0.25s ease;
-    }
-    .card-summary {
-      position: absolute;
-      inset: 0;
-      padding: 20px;
-      font-size: 13px;
-      color: #4a6a8a;
-      line-height: 1.7;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      opacity: 0;
-      transition: opacity 0.25s ease;
-      background: #fff;
-      overflow: hidden;
-    }
-    .card:hover .card-title { opacity: 0; }
-    .card:hover .card-summary { opacity: 1; }
-    .card-empty {
-      background: #fff;
-      border-radius: 12px;
-      padding: 40px;
-      text-align: center;
-      color: #a0b8d0;
-      font-size: 14px;
-      grid-column: 1 / -1;
-    }
-    .card-actions {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      display: flex;
-      gap: 4px;
-      opacity: 0;
-      transition: opacity 0.15s ease;
-      z-index: 2;
-    }
-    .card:hover .card-actions { opacity: 1; }
-    .card-actions button {
-      background: rgba(255,255,255,0.9);
-      border: 1px solid #e4edf5;
-      border-radius: 6px;
-      cursor: pointer;
-      padding: 4px;
-      color: #a0b8d0;
-      display: flex;
-      align-items: center;
-    }
-    .card-actions button:hover { color: #1e3a5f; background: #eef4fa; }
-    .card-actions button.delete:hover { color: #c45c5c; background: #fce8e8; }
+.category { margin-bottom:8px; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(30,58,95,0.06); }
+.cat-header { display:flex; align-items:center; gap:10px; padding:14px 18px; cursor:pointer; user-select:none; transition:background 0.15s ease; }
+.cat-header:hover { background:#e8f1f8; }
+.cat-arrow { font-size:12px; color:#5a8ab8; transition:transform 0.2s ease; display:inline-block; }
+.cat-arrow.open { transform:rotate(90deg); }
+.cat-name { font-size:16px; font-weight:500; color:#1e3a5f; }
+.sub-list { padding:0 18px 12px 44px; }
+.sub-item { margin-bottom:4px; }
+.sub-header { display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-radius:8px; transition:background 0.15s ease; }
+.sub-header:hover { background:#f5f9fd; }
+.sub-left { display:flex; align-items:center; gap:8px; flex:1; cursor:pointer; }
+.sub-arrow { font-size:11px; color:#7a9ab8; transition:transform 0.2s ease; display:inline-block; width:14px; text-align:center; }
+.sub-arrow.open { transform:rotate(90deg); }
+.sub-name { font-size:14px; color:#4a6a8a; display:flex; align-items:center; gap:8px; }
+.sub-actions { display:flex; align-items:center; gap:4px; }
+.btn-icon {
+  background:none; border:none; cursor:pointer; padding:4px; border-radius:6px;
+  color:#a0b8d0; transition:all 0.15s ease; display:flex; align-items:center; justify-content:center;
+}
+.btn-icon:hover { color:#1e3a5f; background:#e0ecf6; }
+.btn-enter {
+  font-size:12px; color:#5a9bd5; padding:3px 10px; border:1px solid #c8ddf0; border-radius:6px;
+  background:#f5f9fd; cursor:pointer; transition:all 0.15s ease;
+}
+.btn-enter:hover { background:#e0ecf6; border-color:#5a9bd5; }
 
-    /* 编辑器 */
-    .editor-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(30, 58, 95, 0.35);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-      padding: 20px;
-    }
-    .editor-overlay.active { display: flex; }
-    .editor-panel {
-      background: #fff;
-      border-radius: 14px;
-      max-width: 520px;
-      width: 100%;
-      box-shadow: 0 12px 40px rgba(30, 58, 95, 0.15);
-      overflow: hidden;
-    }
-    .editor-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 18px 22px;
-      border-bottom: 1px solid #e4edf5;
-    }
-    .editor-header span {
-      font-size: 16px;
-      font-weight: 500;
-      color: #1e3a5f;
-    }
-    .editor-header button {
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 4px;
-      border-radius: 6px;
-      color: #a0b8d0;
-    }
-    .editor-header button:hover { color: #1e3a5f; }
-    .editor-body {
-      padding: 18px 22px;
-    }
-    .editor-body input, .editor-body textarea {
-      width: 100%;
-      padding: 10px 14px;
-      margin-bottom: 10px;
-      border: 1px solid #d0e0f0;
-      border-radius: 10px;
-      font-size: 14px;
-      background: #fafcfe;
-      color: #1a1a2e;
-      outline: none;
-      font-family: inherit;
-      transition: border-color 0.15s ease;
-    }
-    .editor-body input:focus, .editor-body textarea:focus {
-      border-color: #5a9bd5;
-    }
-    .editor-body textarea { resize: vertical; min-height: 80px; }
-    .editor-footer {
-      display: flex;
-      gap: 10px;
-      justify-content: flex-end;
-      padding: 0 22px 18px;
-    }
-    .btn {
-      padding: 8px 18px;
-      border-radius: 8px;
-      font-size: 14px;
-      cursor: pointer;
-      border: none;
-      transition: all 0.15s ease;
-    }
-    .btn-secondary {
-      background: #f0f6fb;
-      color: #5a7a9a;
-      border: 1px solid #d0e0f0;
-    }
-    .btn-secondary:hover { background: #e4edf5; }
-    .btn-primary {
-      background: #1e3a5f;
-      color: #fff;
-    }
-    .btn-primary:hover { background: #2a4a75; }
+.tree-works { padding-left:28px; }
+.tree-work { display:flex; align-items:center; justify-content:space-between; padding:5px 10px; border-radius:6px; cursor:pointer; transition:background 0.15s ease; }
+.tree-work:hover { background:#eef4fa; }
+.tree-work:hover .tw-actions { opacity:1; }
+.tw-title { font-size:13px; color:#5a7a9a; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tw-actions { opacity:0; transition:opacity 0.15s ease; display:flex; gap:2px; }
+.tw-actions button { background:none; border:none; cursor:pointer; padding:3px; border-radius:4px; color:#a0b8d0; display:flex; align-items:center; }
+.tw-actions button:hover { color:#1e3a5f; background:#dbe8f4; }
+.tw-actions button.del:hover { color:#c45c5c; background:#fce8e8; }
 
-    /* 查看弹窗 */
-    .viewer-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(30, 58, 95, 0.35);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-      padding: 20px;
-    }
-    .viewer-overlay.active { display: flex; }
-    .viewer-panel {
-      background: #fff;
-      border-radius: 14px;
-      max-width: 560px;
-      width: 100%;
-      max-height: 80vh;
-      display: flex;
-      flex-direction: column;
-      box-shadow: 0 12px 40px rgba(30, 58, 95, 0.15);
-      overflow: hidden;
-    }
-    .viewer-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 18px 22px;
-      border-bottom: 1px solid #e4edf5;
-    }
-    .viewer-header span {
-      font-size: 16px;
-      font-weight: 500;
-      color: #1e3a5f;
-    }
-    .viewer-header button {
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 4px;
-      border-radius: 6px;
-      color: #a0b8d0;
-    }
-    .viewer-header button:hover { color: #1e3a5f; }
-    .viewer-body {
-      padding: 22px;
-      overflow: auto;
-      flex: 1;
-    }
-    .viewer-body pre {
-      font-size: 14px;
-      color: #4a6a8a;
-      line-height: 1.8;
-      white-space: pre-wrap;
-      word-break: break-word;
-      font-family: inherit;
-    }
-    .viewer-body .empty {
-      color: #a0b8d0;
-      font-style: italic;
-    }
-  </style>
+.tree-series { padding-left:24px; }
+.series-block { margin-bottom:4px; }
+.series-header { display:flex; align-items:center; justify-content:space-between; padding:6px 10px; border-radius:6px; cursor:pointer; transition:background 0.15s ease; }
+.series-header:hover { background:#eef4fa; }
+.series-header:hover .se-actions { opacity:1; }
+.series-left { display:flex; align-items:center; gap:6px; flex:1; }
+.se-arrow { font-size:10px; color:#7a9ab8; transition:transform 0.2s ease; display:inline-block; width:12px; text-align:center; }
+.se-arrow.open { transform:rotate(90deg); }
+.se-name { font-size:13px; color:#4a6a8a; font-weight:500; }
+.se-actions { opacity:0; transition:opacity 0.15s ease; display:flex; gap:2px; }
+.se-actions button { background:none; border:none; cursor:pointer; padding:3px; border-radius:4px; color:#a0b8d0; display:flex; align-items:center; }
+.se-actions button:hover { color:#1e3a5f; background:#dbe8f4; }
+.se-actions button.del:hover { color:#c45c5c; background:#fce8e8; }
+.tree-chapters { padding-left:24px; }
+
+.page-header { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+.page-header button {
+  background:#fff; border:1px solid #d0e0f0; border-radius:8px; padding:6px 14px;
+  font-size:14px; color:#4a6a8a; cursor:pointer; transition:all 0.15s ease; display:flex; align-items:center; gap:4px;
+}
+.page-header button:hover { background:#e8f1f8; border-color:#a0c0d8; }
+.page-header h2 { font-size:18px; font-weight:500; color:#1e3a5f; }
+.card-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:16px; }
+.card {
+  background:#fff; border-radius:12px; padding:20px; box-shadow:0 1px 3px rgba(30,58,95,0.06);
+  cursor:pointer; position:relative; overflow:hidden; transition:transform 0.2s ease, box-shadow 0.2s ease;
+  min-height:140px; display:flex; flex-direction:column; justify-content:center;
+}
+.card:hover { transform:translateY(-4px); box-shadow:0 8px 24px rgba(30,58,95,0.12); }
+.card-title { font-size:15px; font-weight:500; color:#1e3a5f; text-align:center; transition:opacity 0.25s ease; }
+.card-summary {
+  position:absolute; inset:0; padding:20px; font-size:13px; color:#4a6a8a; line-height:1.7;
+  display:flex; align-items:center; justify-content:center; text-align:center;
+  opacity:0; transition:opacity 0.25s ease; background:#fff; overflow:hidden;
+}
+.card:hover .card-title { opacity:0; }
+.card:hover .card-summary { opacity:1; }
+.card-actions {
+  position:absolute; top:8px; right:8px; display:flex; gap:4px; opacity:0;
+  transition:opacity 0.15s ease; z-index:2;
+}
+.card:hover .card-actions { opacity:1; }
+.card-actions button { background:rgba(255,255,255,0.9); border:1px solid #e4edf5; border-radius:6px; cursor:pointer; padding:4px; color:#a0b8d0; display:flex; align-items:center; }
+.card-actions button:hover { color:#1e3a5f; background:#eef4fa; }
+.card-actions button.del:hover { color:#c45c5c; background:#fce8e8; }
+.card-empty { background:#fff; border-radius:12px; padding:40px; text-align:center; color:#a0b8d0; font-size:14px; grid-column:1 / -1; }
+
+.series-list { display:flex; flex-direction:column; gap:8px; }
+.series-card { background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(30,58,95,0.06); }
+.series-card-header { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; cursor:pointer; transition:background 0.15s ease; }
+.series-card-header:hover { background:#f5f9fd; }
+.series-card-header:hover .sc-actions { opacity:1; }
+.sc-left { display:flex; align-items:center; gap:10px; flex:1; }
+.sc-arrow { font-size:12px; color:#5a8ab8; transition:transform 0.2s ease; display:inline-block; }
+.sc-arrow.open { transform:rotate(90deg); }
+.sc-name { font-size:15px; font-weight:500; color:#1e3a5f; }
+.sc-actions { opacity:0; transition:opacity 0.15s ease; display:flex; gap:4px; }
+.sc-actions button { background:none; border:none; cursor:pointer; padding:4px; border-radius:6px; color:#a0b8d0; display:flex; align-items:center; }
+.sc-actions button:hover { color:#1e3a5f; background:#e0ecf6; }
+.sc-actions button.del:hover { color:#c45c5c; background:#fce8e8; }
+.series-card-body { padding:0 18px 14px 44px; }
+.series-chapter { display:flex; align-items:center; justify-content:space-between; padding:6px 10px; border-radius:6px; cursor:pointer; transition:background 0.15s ease; }
+.series-chapter:hover { background:#eef4fa; }
+.series-chapter:hover .sch-actions { opacity:1; }
+.sch-title { font-size:13px; color:#5a7a9a; flex:1; }
+.sch-actions { opacity:0; transition:opacity 0.15s ease; display:flex; gap:2px; }
+.sch-actions button { background:none; border:none; cursor:pointer; padding:3px; border-radius:4px; color:#a0b8d0; display:flex; align-items:center; }
+.sch-actions button:hover { color:#1e3a5f; background:#dbe8f4; }
+.sch-actions button.del:hover { color:#c45c5c; background:#fce8e8; }
+
+.read-overlay {
+  position:fixed; inset:0; background:rgba(30,58,95,0.35);
+  display:none; align-items:center; justify-content:center; z-index:100; padding:20px;
+}
+.read-overlay.active { display:flex; }
+.read-panel {
+  background:#fff; border-radius:14px; max-width:640px; width:100%; max-height:85vh;
+  display:flex; flex-direction:column; box-shadow:0 12px 40px rgba(30,58,95,0.15); overflow:hidden;
+}
+.read-header {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:16px 22px; border-bottom:1px solid #e4edf5; flex-shrink:0;
+}
+.read-header-left { display:flex; align-items:center; gap:12px; }
+.read-header-left span { font-size:16px; font-weight:500; color:#1e3a5f; }
+.read-mode-toggle {
+  font-size:12px; color:#5a9bd5; padding:4px 12px; border:1px solid #c8ddf0;
+  border-radius:6px; background:#f5f9fd; cursor:pointer; transition:all 0.15s ease;
+}
+.read-mode-toggle:hover { background:#e0ecf6; }
+.read-header button { background:none; border:none; cursor:pointer; padding:4px; border-radius:6px; color:#a0b8d0; }
+.read-header button:hover { color:#1e3a5f; }
+.read-body { padding:22px; overflow:auto; flex:1; }
+.read-body pre {
+  font-size:14px; color:#4a6a8a; line-height:1.8; white-space:pre-wrap;
+  word-break:break-word; font-family:inherit;
+}
+.read-body .empty { color:#a0b8d0; font-style:italic; }
+.read-nav {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:12px 22px; border-top:1px solid #e4edf5; flex-shrink:0;
+}
+.read-nav button {
+  padding:6px 16px; border-radius:8px; font-size:13px; cursor:pointer;
+  border:1px solid #d0e0f0; background:#f5f9fd; color:#4a6a8a;
+  transition:all 0.15s ease;
+}
+.read-nav button:hover:not(:disabled) { background:#e0ecf6; border-color:#a0c0d8; }
+.read-nav button:disabled { opacity:0.4; cursor:not-allowed; }
+.read-nav-info { font-size:12px; color:#a0b8d0; }
+
+.editor-overlay {
+  position:fixed; inset:0; background:rgba(30,58,95,0.35);
+  display:none; align-items:center; justify-content:center; z-index:100; padding:20px;
+}
+.editor-overlay.active { display:flex; }
+.editor-panel {
+  background:#fff; border-radius:14px; max-width:520px; width:100%;
+  box-shadow:0 12px 40px rgba(30,58,95,0.15); overflow:hidden;
+}
+.editor-header {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:18px 22px; border-bottom:1px solid #e4edf5;
+}
+.editor-header span { font-size:16px; font-weight:500; color:#1e3a5f; }
+.editor-header button { background:none; border:none; cursor:pointer; padding:4px; border-radius:6px; color:#a0b8d0; }
+.editor-header button:hover { color:#1e3a5f; }
+.editor-body { padding:18px 22px; }
+.editor-body input, .editor-body textarea {
+  width:100%; padding:10px 14px; margin-bottom:10px; border:1px solid #d0e0f0;
+  border-radius:10px; font-size:14px; background:#fafcfe; color:#1a1a2e;
+  outline:none; font-family:inherit; transition:border-color 0.15s ease;
+}
+.editor-body input:focus, .editor-body textarea:focus { border-color:#5a9bd5; }
+.editor-body textarea { resize:vertical; min-height:80px; }
+.editor-footer { display:flex; gap:10px; justify-content:flex-end; padding:0 22px 18px; }
+.btn { padding:8px 18px; border-radius:8px; font-size:14px; cursor:pointer; border:none; transition:all 0.15s ease; }
+.btn-secondary { background:#f0f6fb; color:#5a7a9a; border:1px solid #d0e0f0; }
+.btn-secondary:hover { background:#e4edf5; }
+.btn-primary { background:#1e3a5f; color:#fff; }
+.btn-primary:hover { background:#2a4a75; }
+
+footer {
+  text-align:center; padding:32px 0 16px; margin-top:40px;
+  color:#a0b8d0; font-size:12px; letter-spacing:0.5px;
+}
+
+.add-row {
+  display:flex; align-items:center; gap:6px; padding:8px 10px;
+  border-radius:6px; cursor:pointer; color:#5a9bd5; font-size:13px;
+  transition:background 0.15s ease; margin-top:4px;
+}
+.add-row:hover { background:#eef4fa; }
+</style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>鱼的作品集归档</h1>
-      <p>ArchiveOfYtta</p>
-    </header>
+<div class="container">
+  <header>
+    <h1>鱼的作品集归档</h1>
+    <p>ArchiveOfYtta</p>
+  </header>
 
-    <!-- 目录树视图 -->
-    <div id="treeView"></div>
+  <div class="view active" id="treeView"></div>
 
-    <!-- 卡片信息流视图 -->
-    <div class="card-view" id="cardView">
-      <div class="card-header">
-        <button onclick="backToTree()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:4px;"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-          返回目录
-        </button>
-        <h2 id="cardViewTitle"></h2>
+  <div class="view" id="cardView">
+    <div class="page-header">
+      <button onclick="showTree()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>返回目录</button>
+      <h2 id="cardTitle"></h2>
+    </div>
+    <div class="card-grid" id="cardGrid"></div>
+  </div>
+
+  <div class="view" id="seriesView">
+    <div class="page-header">
+      <button onclick="showTree()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>返回目录</button>
+      <h2 id="seriesTitle"></h2>
+    </div>
+    <div class="series-list" id="seriesList"></div>
+  </div>
+
+  <div class="view" id="chapterCardView">
+    <div class="page-header">
+      <button onclick="backToSeries()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>返回系列</button>
+      <h2 id="chapterCardTitle"></h2>
+    </div>
+    <div class="card-grid" id="chapterCardGrid"></div>
+  </div>
+
+  <div class="read-overlay" id="readOverlay" onclick="if(event.target===this)closeRead()">
+    <div class="read-panel">
+      <div class="read-header">
+        <div class="read-header-left">
+          <span id="readTitle"></span>
+          <button class="read-mode-toggle" id="readModeBtn" onclick="toggleReadMode()" style="display:none;">全文阅读</button>
+        </div>
+        <button onclick="closeRead()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
       </div>
-      <div class="card-grid" id="cardGrid"></div>
+      <div class="read-body"><pre id="readContent"></pre></div>
+      <div class="read-nav" id="readNav"></div>
     </div>
   </div>
 
-  <!-- 编辑器 -->
   <div class="editor-overlay" id="editorOverlay" onclick="if(event.target===this)closeEditor()">
     <div class="editor-panel">
-      <div class="editor-header">
-        <span id="editorTitle">添加作品</span>
-        <button onclick="closeEditor()">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-        </button>
-      </div>
-      <div class="editor-body">
-        <input type="text" id="workTitle" placeholder="作品标题">
-        <input type="text" id="workSummary" placeholder="Summary（悬停时显示的简介，可选）">
-        <textarea id="workContent" placeholder="作品内容（可选）"></textarea>
-      </div>
-      <div class="editor-footer">
-        <button class="btn btn-secondary" onclick="closeEditor()">取消</button>
-        <button class="btn btn-primary" onclick="saveWork()">保存</button>
-      </div>
+      <div class="editor-header"><span id="editorTitle">添加</span><button onclick="closeEditor()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+      <div class="editor-body" id="editorBody"></div>
+      <div class="editor-footer"><button class="btn btn-secondary" onclick="closeEditor()">取消</button><button class="btn btn-primary" onclick="saveEditor()">保存</button></div>
     </div>
   </div>
 
-  <!-- 查看器 -->
-  <div class="viewer-overlay" id="viewerOverlay" onclick="if(event.target===this)closeViewer()">
-    <div class="viewer-panel">
-      <div class="viewer-header">
-        <span id="viewerTitle"></span>
-        <button onclick="closeViewer()">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-        </button>
-      </div>
-      <div class="viewer-body">
-        <pre id="viewerContent"></pre>
-      </div>
-    </div>
-  </div>
+  <footer>© 2026 YttaAnder. All rights reserved.</footer>
+</div>
 
-  <script>
-    const structure = [
-      {
-        name: '同人',
-        open: true,
-        children: [
-          { name: '短篇同人', works: [] },
-          { name: '长篇同人', works: [] }
-        ]
-      },
-      {
-        name: '原创',
-        open: true,
-        children: [
-          { name: '短篇小说', works: [] },
-          { name: '长篇小说', works: [] },
-          { name: '诗歌', works: [] },
-          { name: '散文随笔', works: [] }
-        ]
-      }
-    ];
+<script>
+const structure = [
+  {
+    name:'同人', open:true,
+    children:[
+      {name:'短篇同人', open:false, type:'short', works:[]},
+      {name:'长篇同人', open:false, type:'long', series:[]}
+    ]
+  },
+  {
+    name:'原创', open:true,
+    children:[
+      {name:'短篇小说', open:false, type:'short', works:[]},
+      {name:'长篇小说', open:false, type:'long', series:[]},
+      {name:'诗歌', open:false, type:'short', works:[]},
+      {name:'散文随笔', open:false, type:'short', works:[]}
+    ]
+  }
+];
 
-    let currentCat = null;
-    let currentWorkIndex = -1;
-    let cardViewCat = null;
-    let cardViewSub = null;
+let appState = { view:'tree', ci:null, si:null, seriesIndex:null, chapterIndex:null, workIndex:null, readMode:'single' };
+let editState = { mode:null, ci:null, si:null, seriesIndex:null, index:null };
 
-    function renderTree() {
-      const tree = document.getElementById('treeView');
-      let html = '';
-      structure.forEach((cat, ci) => {
-        html += `<div class="category">`;
-        html += `<div class="cat-header" onclick="toggleCat(${ci})">`;
-        html += `<span class="cat-arrow ${cat.open ? 'open' : ''}">▸</span>`;
-        html += `<span class="cat-name">${cat.name}</span>`;
-        html += `</div>`;
-        if (cat.open) {
-          html += `<div class="sub-list">`;
-          cat.children.forEach((sub, si) => {
-            html += `<div class="sub-item">`;
-            html += `<div class="sub-header" onclick="openCardView(${ci},${si})">`;
-            html += `<span class="sub-name">`;
-            html += `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7a9ab8" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
-            html += `${sub.name}</span>`;
-            html += `<button class="btn-icon" onclick="event.stopPropagation();openAdd(${ci},${si})" title="添加作品">`;
-            html += `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
-            html += `</button>`;
-            html += `</div>`;
-            if (sub.works.length > 0) {
-              html += `<div class="works-list">`;
-              sub.works.forEach((work, wi) => {
-                html += `<div class="work-item">`;
-                html += `<span class="work-title-text" onclick="event.stopPropagation();viewWork(${ci},${si},${wi})">${escapeHtml(work.title)}</span>`;
-                html += `<span class="work-actions">`;
-                html += `<button onclick="event.stopPropagation();openEdit(${ci},${si},${wi})" title="编辑">`;
-                html += `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
-                html += `</button>`;
-                html += `<button class="delete" onclick="event.stopPropagation();deleteWork(${ci},${si},${wi})" title="删除">`;
-                html += `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>`;
-                html += `</button>`;
-                html += `</span>`;
-                html += `</div>`;
-              });
-              html += `</div>`;
-            }
-            html += `</div>`;
-          });
-          html += `</div>`;
+function setView(name) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById(name+'View').classList.add('active');
+  appState.view = name;
+}
+
+function showTree() {
+  setView('tree');
+  renderTree();
+}
+
+function renderTree() {
+  const el = document.getElementById('treeView');
+  let h = '';
+  structure.forEach((cat,ci)=>{
+    h += `<div class="category">`;
+    h += `<div class="cat-header" onclick="toggleCat(${ci})">`;
+    h += `<span class="cat-arrow ${cat.open?'open':''}">▸</span>`;
+    h += `<span class="cat-name">${cat.name}</span>`;
+    h += `</div>`;
+    if(cat.open) {
+      h += `<div class="sub-list">`;
+      cat.children.forEach((sub,si)=>{
+        h += `<div class="sub-item">`;
+        h += `<div class="sub-header">`;
+        h += `<div class="sub-left" onclick="toggleSub(${ci},${si})">`;
+        h += `<span class="sub-arrow ${sub.open?'open':''}">▸</span>`;
+        h += `<span class="sub-name"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7a9ab8" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>${sub.name}</span>`;
+        h += `</div>`;
+        h += `<div class="sub-actions">`;
+        if(sub.type==='short'){
+          h += `<button class="btn-enter" onclick="event.stopPropagation();showCards(${ci},${si})">进入</button>`;
+          h += `<button class="btn-icon" onclick="event.stopPropagation();openWorkEditor(${ci},${si})" title="添加作品"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>`;
+        } else {
+          h += `<button class="btn-enter" onclick="event.stopPropagation();showSeries(${ci},${si})">进入</button>`;
+          h += `<button class="btn-icon" onclick="event.stopPropagation();openSeriesEditor(${ci},${si})" title="添加系列"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>`;
         }
-        html += `</div>`;
+        h += `</div></div>`;
+        if(sub.open) {
+          if(sub.type==='short') {
+            h += renderTreeWorks(ci,si);
+          } else {
+            h += renderTreeSeries(ci,si);
+          }
+        }
+        h += `</div>`;
       });
-      tree.innerHTML = html;
+      h += `</div>`;
     }
+    h += `</div>`;
+  });
+  el.innerHTML = h;
+}
 
-    function toggleCat(ci) {
-      structure[ci].open = !structure[ci].open;
-      renderTree();
-    }
+function renderTreeWorks(ci,si) {
+  const works = structure[ci].children[si].works;
+  if(!works.length) return '';
+  let h = `<div class="tree-works">`;
+  works.forEach((w,wi)=>{
+    h += `<div class="tree-work" onclick="readWork(${ci},${si},${wi})">`;
+    h += `<span class="tw-title">${esc(w.title)}</span>`;
+    h += `<span class="tw-actions">`;
+    h += `<button onclick="event.stopPropagation();openWorkEditor(${ci},${si},${wi})" title="编辑"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
+    h += `<button class="del" onclick="event.stopPropagation();deleteWork(${ci},${si},${wi})" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>`;
+    h += `</span></div>`;
+  });
+  h += `</div>`;
+  return h;
+}
 
-    function openCardView(ci, si) {
-      cardViewCat = ci;
-      cardViewSub = si;
-      const sub = structure[ci].children[si];
-      document.getElementById('cardViewTitle').textContent = sub.name;
-      renderCards();
-      document.getElementById('treeView').style.display = 'none';
-      document.getElementById('cardView').classList.add('active');
-    }
-
-    function backToTree() {
-      document.getElementById('cardView').classList.remove('active');
-      document.getElementById('treeView').style.display = 'block';
-      cardViewCat = null;
-      cardViewSub = null;
-    }
-
-    function renderCards() {
-      const grid = document.getElementById('cardGrid');
-      const works = structure[cardViewCat].children[cardViewSub].works;
-      if (works.length === 0) {
-        grid.innerHTML = `<div class="card-empty">暂无作品，点击右上角「+」按钮添加</div>`;
-        return;
-      }
-      let html = '';
-      works.forEach((work, wi) => {
-        const summaryText = work.summary ? escapeHtml(work.summary) : (work.content ? escapeHtml(work.content.slice(0, 80)) + (work.content.length > 80 ? '...' : '') : '暂无简介');
-        html += `<div class="card" onclick="viewWork(${cardViewCat},${cardViewSub},${wi})">`;
-        html += `<div class="card-actions">`;
-        html += `<button onclick="event.stopPropagation();openEdit(${cardViewCat},${cardViewSub},${wi})" title="编辑"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
-        html += `<button class="delete" onclick="event.stopPropagation();deleteWork(${cardViewCat},${cardViewSub},${wi})" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>`;
-        html += `</div>`;
-        html += `<div class="card-title">${escapeHtml(work.title)}</div>`;
-        html += `<div class="card-summary">${summaryText}</div>`;
-        html += `</div>`;
+function renderTreeSeries(ci,si) {
+  const series = structure[ci].children[si].series;
+  if(!series.length) return '';
+  let h = `<div class="tree-series">`;
+  series.forEach((se,sei)=>{
+    h += `<div class="series-block">`;
+    h += `<div class="series-header" onclick="toggleSeries(${ci},${si},${sei})">`;
+    h += `<div class="series-left">`;
+    h += `<span class="se-arrow ${se.open?'open':''}">▸</span>`;
+    h += `<span class="se-name">${esc(se.name)}</span>`;
+    h += `</div>`;
+    h += `<span class="se-actions">`;
+    h += `<button onclick="event.stopPropagation();showChapterCards(${ci},${si},${sei})" title="查看章节"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
+    h += `<button onclick="event.stopPropagation();openSeriesEditor(${ci},${si},${sei})" title="编辑"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
+    h += `<button class="del" onclick="event.stopPropagation();deleteSeries(${ci},${si},${sei})" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>`;
+    h += `</span></div>`;
+    if(se.open) {
+      h += `<div class="tree-chapters">`;
+      se.chapters.forEach((ch,chi)=>{
+        h += `<div class="series-chapter" onclick="readChapter(${ci},${si},${sei},${chi})">`;
+        h += `<span class="sch-title">${esc(ch.title)}</span>`;
+        h += `<span class="sch-actions">`;
+        h += `<button onclick="event.stopPropagation();openChapterEditor(${ci},${si},${sei},${chi})" title="编辑"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
+        h += `<button class="del" onclick="event.stopPropagation();deleteChapter(${ci},${si},${sei},${chi})" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>`;
+        h += `</span></div>`;
       });
-      grid.innerHTML = html;
+      h += `<div class="add-row" onclick="openChapterEditor(${ci},${si},${sei})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>添加章节</div>`;
+      h += `</div>`;
     }
+    h += `</div>`;
+  });
+  h += `</div>`;
+  return h;
+}
 
-    function openAdd(ci, si) {
-      currentCat = { ci, si };
-      currentWorkIndex = -1;
-      document.getElementById('editorTitle').textContent = '添加作品 — ' + structure[ci].children[si].name;
-      document.getElementById('workTitle').value = '';
-      document.getElementById('workSummary').value = '';
-      document.getElementById('workContent').value = '';
-      document.getElementById('editorOverlay').classList.add('active');
-      document.getElementById('workTitle').focus();
+function toggleCat(ci){ structure[ci].open=!structure[ci].open; renderTree(); }
+function toggleSub(ci,si){ structure[ci].children[si].open=!structure[ci].children[si].open; renderTree(); }
+function toggleSeries(ci,si,sei){ structure[ci].children[si].series[sei].open=!structure[ci].children[si].series[sei].open; renderTree(); }
+
+function showCards(ci,si){
+  appState.ci=ci; appState.si=si;
+  document.getElementById('cardTitle').textContent=structure[ci].children[si].name;
+  renderCardGrid();
+  setView('card');
+}
+function renderCardGrid(){
+  const works=structure[appState.ci].children[appState.si].works;
+  const grid=document.getElementById('cardGrid');
+  if(!works.length){ grid.innerHTML=`<div class="card-empty">暂无作品，点击上方「+」按钮添加</div>`; return; }
+  let h='';
+  works.forEach((w,wi)=>{
+    const sum = w.summary ? esc(w.summary) : (w.content?esc(w.content.slice(0,80))+(w.content.length>80?'...':''):'暂无简介');
+    h+=`<div class="card" onclick="readWork(${appState.ci},${appState.si},${wi})">`;
+    h+=`<div class="card-actions">`;
+    h+=`<button onclick="event.stopPropagation();openWorkEditor(${appState.ci},${appState.si},${wi})" title="编辑"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
+    h+=`<button class="del" onclick="event.stopPropagation();deleteWork(${appState.ci},${appState.si},${wi})" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>`;
+    h+=`</div>`;
+    h+=`<div class="card-title">${esc(w.title)}</div>`;
+    h+=`<div class="card-summary">${sum}</div>`;
+    h+=`</div>`;
+  });
+  grid.innerHTML=h;
+}
+
+function showSeries(ci,si){
+  appState.ci=ci; appState.si=si;
+  document.getElementById('seriesTitle').textContent=structure[ci].children[si].name;
+  renderSeriesList();
+  setView('series');
+}
+function renderSeriesList(){
+  const series=structure[appState.ci].children[appState.si].series;
+  const el=document.getElementById('seriesList');
+  if(!series.length){ el.innerHTML=`<div class="card-empty">暂无系列，点击上方「+」按钮添加</div>`; return; }
+  let h='';
+  series.forEach((se,sei)=>{
+    h+=`<div class="series-card">`;
+    h+=`<div class="series-card-header" onclick="toggleSeriesCard(${sei})">`;
+    h+=`<div class="sc-left">`;
+    h+=`<span class="sc-arrow ${se.open?'open':''}">▸</span>`;
+    h+=`<span class="sc-name">${esc(se.name)}</span>`;
+    h+=`</div>`;
+    h+=`<span class="sc-actions">`;
+    h+=`<button onclick="event.stopPropagation();showChapterCards(${appState.ci},${appState.si},${sei})" title="查看章节"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
+    h+=`<button onclick="event.stopPropagation();openSeriesEditor(${appState.ci},${appState.si},${sei})" title="编辑"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
+    h+=`<button class="del" onclick="event.stopPropagation();deleteSeries(${appState.ci},${appState.si},${sei})" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>`;
+    h+=`</span></div>`;
+    if(se.open){
+      h+=`<div class="series-card-body">`;
+      se.chapters.forEach((ch,chi)=>{
+        h+=`<div class="series-chapter" onclick="readChapter(${appState.ci},${appState.si},${sei},${chi})">`;
+        h+=`<span class="sch-title">${esc(ch.title)}</span>`;
+        h+=`<span class="sch-actions">`;
+        h+=`<button onclick="event.stopPropagation();openChapterEditor(${appState.ci},${appState.si},${sei},${chi})" title="编辑"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
+        h+=`<button class="del" onclick="event.stopPropagation();deleteChapter(${appState.ci},${appState.si},${sei},${chi})" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>`;
+        h+=`</span></div>`;
+      });
+      h+=`<div class="add-row" onclick="openChapterEditor(${appState.ci},${appState.si},${sei})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>添加章节</div>`;
+      h+=`</div>`;
     }
+    h+=`</div>`;
+  });
+  el.innerHTML=h;
+}
+function toggleSeriesCard(sei){ structure[appState.ci].children[appState.si].series[sei].open=!structure[appState.ci].children[appState.si].series[sei].open; renderSeriesList(); }
+function backToSeries(){ renderSeriesList(); setView('series'); }
 
-    function openEdit(ci, si, wi) {
-      currentCat = { ci, si };
-      currentWorkIndex = wi;
-      const work = structure[ci].children[si].works[wi];
-      document.getElementById('editorTitle').textContent = '编辑作品 — ' + work.title;
-      document.getElementById('workTitle').value = work.title;
-      document.getElementById('workSummary').value = work.summary || '';
-      document.getElementById('workContent').value = work.content || '';
-      document.getElementById('editorOverlay').classList.add('active');
+function showChapterCards(ci,si,sei){
+  appState.ci=ci; appState.si=si; appState.seriesIndex=sei;
+  const se=structure[ci].children[si].series[sei];
+  document.getElementById('chapterCardTitle').textContent=se.name;
+  renderChapterGrid();
+  setView('chapterCard');
+}
+function renderChapterGrid(){
+  const chs=structure[appState.ci].children[appState.si].series[appState.seriesIndex].chapters;
+  const grid=document.getElementById('chapterCardGrid');
+  if(!chs.length){ grid.innerHTML=`<div class="card-empty">暂无章节，点击上方「+」按钮添加</div>`; return; }
+  let h='';
+  chs.forEach((ch,chi)=>{
+    const sum=ch.summary?esc(ch.summary):(ch.content?esc(ch.content.slice(0,80))+(ch.content.length>80?'...':''):'暂无简介');
+    h+=`<div class="card" onclick="readChapter(${appState.ci},${appState.si},${appState.seriesIndex},${chi})">`;
+    h+=`<div class="card-actions">`;
+    h+=`<button onclick="event.stopPropagation();openChapterEditor(${appState.ci},${appState.si},${appState.seriesIndex},${chi})" title="编辑"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
+    h+=`<button class="del" onclick="event.stopPropagation();deleteChapter(${appState.ci},${appState.si},${appState.seriesIndex},${chi})" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>`;
+    h+=`</div>`;
+    h+=`<div class="card-title">${esc(ch.title)}</div>`;
+    h+=`<div class="card-summary">${sum}</div>`;
+    h+=`</div>`;
+  });
+  grid.innerHTML=h;
+}
+
+function readWork(ci,si,wi){
+  appState.ci=ci; appState.si=si; appState.workIndex=wi;
+  appState.readMode='single';
+  renderRead();
+  document.getElementById('readModeBtn').style.display='none';
+  document.getElementById('readOverlay').classList.add('active');
+}
+function readChapter(ci,si,sei,chi){
+  appState.ci=ci; appState.si=si; appState.seriesIndex=sei; appState.chapterIndex=chi;
+  appState.readMode='single';
+  renderRead();
+  document.getElementById('readModeBtn').style.display='inline-block';
+  document.getElementById('readOverlay').classList.add('active');
+}
+function closeRead(){ document.getElementById('readOverlay').classList.remove('active'); }
+
+function renderRead(){
+  const sub=structure[appState.ci].children[appState.si];
+  let title, content, prev, next, info;
+  const nav=document.getElementById('readNav');
+
+  if(sub.type==='short'){
+    const works=sub.works;
+    const idx=appState.workIndex;
+    const w=works[idx];
+    title=w.title;
+    content=w.content||'暂无内容';
+    prev=idx>0?()=>{appState.workIndex--;renderRead();}:null;
+    next=idx<works.length-1?()=>{appState.workIndex++;renderRead();}:null;
+    info=`${idx+1} / ${works.length}`;
+  } else {
+    const se=sub.series[appState.seriesIndex];
+    const chs=se.chapters;
+    if(appState.readMode==='single'){
+      const idx=appState.chapterIndex;
+      const ch=chs[idx];
+      title=ch.title;
+      content=ch.content||'暂无内容';
+      prev=idx>0?()=>{appState.chapterIndex--;renderRead();}:null;
+      next=idx<chs.length-1?()=>{appState.chapterIndex++;renderRead();}:null;
+      info=`${idx+1} / ${chs.length}`;
+      document.getElementById('readModeBtn').textContent='全文阅读';
+    } else {
+      title=se.name+'（全文）';
+      content=chs.map((ch,i)=>`【${ch.title}】\n${ch.content||'暂无内容'}`).join('\n\n');
+      prev=null; next=null; info=`共 ${chs.length} 章`;
+      document.getElementById('readModeBtn').textContent='单章阅读';
     }
+  }
 
-    function closeEditor() {
-      document.getElementById('editorOverlay').classList.remove('active');
-      currentCat = null;
-      currentWorkIndex = -1;
+  document.getElementById('readTitle').textContent=title;
+  document.getElementById('readContent').textContent=content;
+
+  let nh='';
+  if(prev) nh+=`<button onclick="prev()">← 上一章</button>`;
+  else nh+=`<button disabled>← 上一章</button>`;
+  nh+=`<span class="read-nav-info">${info}</span>`;
+  if(next) nh+=`<button onclick="next()">下一章 →</button>`;
+  else nh+=`<button disabled>下一章 →</button>`;
+  nav.innerHTML=nh;
+}
+
+function toggleReadMode(){
+  appState.readMode = appState.readMode==='single'?'full':'single';
+  renderRead();
+}
+
+function openWorkEditor(ci,si,wi){
+  editState={mode:'work',ci,si,index:wi!=null?wi:-1};
+  const sub=structure[ci].children[si];
+  const works=sub.works;
+  document.getElementById('editorTitle').textContent = (wi!=null?'编辑作品 — ':'添加作品 — ')+sub.name;
+  document.getElementById('editorBody').innerHTML = `
+    <input type="text" id="edTitle" placeholder="作品标题" value="${wi!=null?escAttr(works[wi].title):''}">
+    <input type="text" id="edSummary" placeholder="Summary（悬停简介，可选）" value="${wi!=null?escAttr(works[wi].summary||''):''}">
+    <textarea id="edContent" placeholder="作品内容（可选）">${wi!=null?escAttr(works[wi].content||''):''}</textarea>
+  `;
+  document.getElementById('editorOverlay').classList.add('active');
+  setTimeout(()=>document.getElementById('edTitle').focus(),50);
+}
+
+function openSeriesEditor(ci,si,sei){
+  editState={mode:'series',ci,si,index:sei!=null?sei:-1};
+  const sub=structure[ci].children[si];
+  const series=sub.series;
+  document.getElementById('editorTitle').textContent = (sei!=null?'编辑系列 — ':'添加系列 — ')+sub.name;
+  document.getElementById('editorBody').innerHTML = `
+    <input type="text" id="edTitle" placeholder="系列名称" value="${sei!=null?escAttr(series[sei].name):''}">
+  `;
+  document.getElementById('editorOverlay').classList.add('active');
+  setTimeout(()=>document.getElementById('edTitle').focus(),50);
+}
+
+function openChapterEditor(ci,si,sei,chi){
+  editState={mode:'chapter',ci,si,seriesIndex:sei,index:chi!=null?chi:-1};
+  const se=structure[ci].children[si].series[sei];
+  const chs=se.chapters;
+  document.getElementById('editorTitle').textContent = (chi!=null?'编辑章节 — ':'添加章节 — ')+se.name;
+  document.getElementById('editorBody').innerHTML = `
+    <input type="text" id="edTitle" placeholder="章节小标题" value="${chi!=null?escAttr(chs[chi].title):''}">
+    <input type="text" id="edSummary" placeholder="Summary（悬停简介，可选）" value="${chi!=null?escAttr(chs[chi].summary||''):''}">
+    <textarea id="edContent" placeholder="章节内容（可选）">${chi!=null?escAttr(chs[chi].content||''):''}</textarea>
+  `;
+  document.getElementById('editorOverlay').classList.add('active');
+  setTimeout(()=>document.getElementById('edTitle').focus(),50);
+}
+
+function closeEditor(){ document.getElementById('editorOverlay').classList.remove('active'); editState={mode:null,ci:null,si:null,seriesIndex:null,index:null}; }
+
+function saveEditor(){
+  const title=document.getElementById('edTitle').value.trim();
+  if(!title){ alert('请输入标题'); return; }
+  const summaryEl=document.getElementById('edSummary');
+  const summary=summaryEl?summaryEl.value.trim():'';
+  const contentEl=document.getElementById('edContent');
+  const content=contentEl?contentEl.value.trim():'';
+
+  if(editState.mode==='work'){
+    const works=structure[editState.ci].children[editState.si].works;
+    if(editState.index>=0){
+      works[editState.index]={title,summary,content};
+    } else {
+      works.push({title,summary,content});
     }
-
-    function saveWork() {
-      const title = document.getElementById('workTitle').value.trim();
-      if (!title) { alert('请输入作品标题'); return; }
-      const summary = document.getElementById('workSummary').value.trim();
-      const content = document.getElementById('workContent').value.trim();
-      const works = structure[currentCat.ci].children[currentCat.si].works;
-      if (currentWorkIndex >= 0) {
-        works[currentWorkIndex] = { title, summary, content };
-      } else {
-        works.push({ title, summary, content });
-      }
-      closeEditor();
-      renderTree();
-      if (cardViewCat !== null && cardViewCat === currentCat.ci && cardViewSub === currentCat.si) {
-        renderCards();
-      }
-    }
-
-    function deleteWork(ci, si, wi) {
-      const title = structure[ci].children[si].works[wi].title;
-      if (!confirm('确定要删除「' + title + '」吗？')) return;
-      structure[ci].children[si].works.splice(wi, 1);
-      renderTree();
-      if (cardViewCat !== null && cardViewCat === ci && cardViewSub === si) {
-        renderCards();
-      }
-    }
-
-    function viewWork(ci, si, wi) {
-      const work = structure[ci].children[si].works[wi];
-      document.getElementById('viewerTitle').textContent = work.title;
-      const contentEl = document.getElementById('viewerContent');
-      if (work.content) {
-        contentEl.textContent = work.content;
-        contentEl.classList.remove('empty');
-      } else {
-        contentEl.textContent = '暂无内容';
-        contentEl.classList.add('empty');
-      }
-      document.getElementById('viewerOverlay').classList.add('active');
-    }
-
-    function closeViewer() {
-      document.getElementById('viewerOverlay').classList.remove('active');
-    }
-
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
-
     renderTree();
-  </script>
+    if(appState.view==='card') renderCardGrid();
+  } else if(editState.mode==='series'){
+    const series=structure[editState.ci].children[editState.si].series;
+    if(editState.index>=0){
+      series[editState.index].name=title;
+    } else {
+      series.push({name:title,open:false,chapters:[]});
+    }
+    renderTree();
+    if(appState.view==='series') renderSeriesList();
+  } else if(editState.mode==='chapter'){
+    const chs=structure[editState.ci].children[editState.si].series[editState.seriesIndex].chapters;
+    if(editState.index>=0){
+      chs[editState.index]={title,summary,content};
+    } else {
+      chs.push({title,summary,content});
+    }
+    renderTree();
+    if(appState.view==='series') renderSeriesList();
+    if(appState.view==='chapterCard') renderChapterGrid();
+  }
+  closeEditor();
+}
+
+function deleteWork(ci,si,wi){
+  const title=structure[ci].children[si].works[wi].title;
+  if(!confirm('确定删除「'+title+'」？')) return;
+  structure[ci].children[si].works.splice(wi,1);
+  renderTree();
+  if(appState.view==='card') renderCardGrid();
+}
+function deleteSeries(ci,si,sei){
+  const name=structure[ci].children[si].series[sei].name;
+  if(!confirm('确定删除系列「'+name+'」及其所有章节？')) return;
+  structure[ci].children[si].series.splice(sei,1);
+  renderTree();
+  if(appState.view==='series') renderSeriesList();
+}
+function deleteChapter(ci,si,sei,chi){
+  const title=structure[ci].children[si].series[sei].chapters[chi].title;
+  if(!confirm('确定删除章节「'+title+'」？')) return;
+  structure[ci].children[si].series[sei].chapters.splice(chi,1);
+  renderTree();
+  if(appState.view==='series') renderSeriesList();
+  if(appState.view==='chapterCard') renderChapterGrid();
+}
+
+function esc(str){ const d=document.createElement('div'); d.textContent=str||''; return d.innerHTML; }
+function escAttr(str){ return (str||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+renderTree();
+</script>
 </body>
 </html>
