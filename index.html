@@ -148,8 +148,8 @@ header p { font-size:14px; color:#7a9ab8; font-variant-numeric:tabular-nums; let
 .read-header button:hover { color:#1e3a5f; }
 .read-body { padding:22px; overflow:auto; flex:1; }
 .read-body pre {
-  font-size:14px; color:#4a6a8a; line-height:1.8; white-space:pre-wrap;
-  word-break:break-word; font-family:inherit;
+  font-size:16px; color:#2a2a3a; line-height:1.9; white-space:pre-wrap;
+  word-break:break-word; font-family: "SimSun", "Songti SC", "STSong", "AR PL New Sung", serif;
 }
 .read-body .empty { color:#a0b8d0; font-style:italic; }
 .read-nav {
@@ -207,6 +207,38 @@ footer {
   transition:background 0.15s ease; margin-top:4px;
 }
 .add-row:hover { background:#eef4fa; }
+
+/* 管理栏 */
+.admin-bar {
+  display:flex; justify-content:flex-end; gap:8px; margin-bottom:16px;
+}
+.admin-bar button {
+  font-size:12px; color:#5a7a9a; padding:5px 12px; border:1px solid #d0e0f0;
+  border-radius:6px; background:#fff; cursor:pointer; transition:all 0.15s ease;
+}
+.admin-bar button:hover { background:#e8f1f8; border-color:#a0c0d8; }
+
+/* 密码弹窗 */
+.pw-overlay {
+  position:fixed; inset:0; background:rgba(30,58,95,0.4);
+  display:none; align-items:center; justify-content:center; z-index:200; padding:20px;
+}
+.pw-overlay.active { display:flex; }
+.pw-panel {
+  background:#fff; border-radius:14px; max-width:360px; width:100%;
+  box-shadow:0 12px 40px rgba(30,58,95,0.2); overflow:hidden; padding:28px;
+  text-align:center;
+}
+.pw-panel h3 { font-size:18px; font-weight:500; color:#1e3a5f; margin-bottom:8px; }
+.pw-panel p { font-size:13px; color:#7a9ab8; margin-bottom:16px; }
+.pw-panel input {
+  width:100%; padding:10px 14px; margin-bottom:12px; border:1px solid #d0e0f0;
+  border-radius:10px; font-size:14px; background:#fafcfe; color:#1a1a2e;
+  outline:none; text-align:center;
+}
+.pw-panel input:focus { border-color:#5a9bd5; }
+.pw-panel .pw-error { color:#c45c5c; font-size:12px; margin-bottom:10px; display:none; }
+.pw-panel .pw-btns { display:flex; gap:8px; justify-content:center; }
 </style>
 </head>
 <body>
@@ -215,6 +247,12 @@ footer {
     <h1>鱼的作品集归档</h1>
     <p>ArchiveOfYtta</p>
   </header>
+
+  <div class="admin-bar" id="adminBar" style="display:none;">
+    <button onclick="exportData()">导出备份</button>
+    <button onclick="importData()">导入备份</button>
+    <button onclick="logoutAdmin()">退出管理</button>
+  </div>
 
   <div class="view active" id="treeView"></div>
 
@@ -264,31 +302,62 @@ footer {
     </div>
   </div>
 
+  <div class="pw-overlay" id="pwOverlay">
+    <div class="pw-panel">
+      <h3>管理验证</h3>
+      <p>请输入管理密码以启用编辑功能</p>
+      <input type="password" id="pwInput" placeholder="密码" onkeydown="if(event.key==='Enter')checkPw()">
+      <div class="pw-error" id="pwError">密码错误</div>
+      <div class="pw-btns">
+        <button class="btn btn-secondary" onclick="closePw()">取消</button>
+        <button class="btn btn-primary" onclick="checkPw()">确认</button>
+      </div>
+    </div>
+  </div>
+
   <footer>© 2026 YttaAnder. All rights reserved.</footer>
 </div>
 
 <script>
+const DEFAULT_PW = "ytta2026";
+const STORAGE_KEY = "ytta_portfolio_data";
+
+let isAdmin = false;
+
 const structure = [
-  {
-    name:'同人', open:true,
-    children:[
-      {name:'短篇同人', open:false, type:'short', works:[]},
-      {name:'长篇同人', open:false, type:'long', series:[]}
-    ]
-  },
-  {
-    name:'原创', open:true,
-    children:[
-      {name:'短篇小说', open:false, type:'short', works:[]},
-      {name:'长篇小说', open:false, type:'long', series:[]},
-      {name:'诗歌', open:false, type:'short', works:[]},
-      {name:'散文随笔', open:false, type:'short', works:[]}
-    ]
-  }
+  { name:'同人', open:true, children:[
+    {name:'短篇同人', open:false, type:'short', works:[]},
+    {name:'长篇同人', open:false, type:'long', series:[]}
+  ]},
+  { name:'原创', open:true, children:[
+    {name:'短篇小说', open:false, type:'short', works:[]},
+    {name:'长篇小说', open:false, type:'long', series:[]},
+    {name:'诗歌', open:false, type:'short', works:[]},
+    {name:'散文随笔', open:false, type:'short', works:[]}
+  ]}
 ];
 
 let appState = { view:'tree', ci:null, si:null, seriesIndex:null, chapterIndex:null, workIndex:null, readMode:'single' };
 let editState = { mode:null, ci:null, si:null, seriesIndex:null, index:null };
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const saved = JSON.parse(raw);
+      if (saved && saved.length === 2) {
+        structure[0].children = saved[0].children;
+        structure[1].children = saved[1].children;
+      }
+    }
+  } catch(e) { console.error('load failed', e); }
+}
+
+function saveData() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(structure));
+  } catch(e) { console.error('save failed', e); }
+}
 
 function setView(name) {
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
@@ -299,6 +368,83 @@ function setView(name) {
 function showTree() {
   setView('tree');
   renderTree();
+}
+
+function toggleAdmin() {
+  if (isAdmin) { logoutAdmin(); return; }
+  document.getElementById('pwOverlay').classList.add('active');
+  setTimeout(()=>document.getElementById('pwInput').focus(),50);
+}
+
+function checkPw() {
+  const val = document.getElementById('pwInput').value.trim();
+  if (val === DEFAULT_PW) {
+    isAdmin = true;
+    document.getElementById('pwOverlay').classList.remove('active');
+    document.getElementById('pwInput').value = '';
+    document.getElementById('pwError').style.display = 'none';
+    document.getElementById('adminBar').style.display = 'flex';
+    renderTree();
+    if (appState.view === 'card') renderCardGrid();
+    if (appState.view === 'series') renderSeriesList();
+    if (appState.view === 'chapterCard') renderChapterGrid();
+  } else {
+    document.getElementById('pwError').style.display = 'block';
+  }
+}
+
+function closePw() {
+  document.getElementById('pwOverlay').classList.remove('active');
+  document.getElementById('pwInput').value = '';
+  document.getElementById('pwError').style.display = 'none';
+}
+
+function logoutAdmin() {
+  isAdmin = false;
+  document.getElementById('adminBar').style.display = 'none';
+  renderTree();
+  if (appState.view === 'card') renderCardGrid();
+  if (appState.view === 'series') renderSeriesList();
+  if (appState.view === 'chapterCard') renderChapterGrid();
+}
+
+function exportData() {
+  const data = JSON.stringify(structure, null, 2);
+  const blob = new Blob([data], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'ytta_portfolio_backup_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = function() {
+    const file = this.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const saved = JSON.parse(e.target.result);
+        if (saved && saved.length === 2) {
+          structure[0].children = saved[0].children;
+          structure[1].children = saved[1].children;
+          saveData();
+          renderTree();
+          if (appState.view === 'card') renderCardGrid();
+          if (appState.view === 'series') renderSeriesList();
+          if (appState.view === 'chapterCard') renderChapterGrid();
+          alert('备份导入成功');
+        } else { alert('备份文件格式不正确'); }
+      } catch(err) { alert('导入失败：' + err.message); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
 }
 
 function renderTree() {
@@ -322,18 +468,15 @@ function renderTree() {
         h += `<div class="sub-actions">`;
         if(sub.type==='short'){
           h += `<button class="btn-enter" onclick="event.stopPropagation();showCards(${ci},${si})">进入</button>`;
-          h += `<button class="btn-icon" onclick="event.stopPropagation();openWorkEditor(${ci},${si})" title="添加作品"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>`;
+          if (isAdmin) h += `<button class="btn-icon" onclick="event.stopPropagation();openWorkEditor(${ci},${si})" title="添加作品"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>`;
         } else {
           h += `<button class="btn-enter" onclick="event.stopPropagation();showSeries(${ci},${si})">进入</button>`;
-          h += `<button class="btn-icon" onclick="event.stopPropagation();openSeriesEditor(${ci},${si})" title="添加系列"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>`;
+          if (isAdmin) h += `<button class="btn-icon" onclick="event.stopPropagation();openSeriesEditor(${ci},${si})" title="添加系列"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>`;
         }
         h += `</div></div>`;
         if(sub.open) {
-          if(sub.type==='short') {
-            h += renderTreeWorks(ci,si);
-          } else {
-            h += renderTreeSeries(ci,si);
-          }
+          if(sub.type==='short') h += renderTreeWorks(ci,si);
+          else h += renderTreeSeries(ci,si);
         }
         h += `</div>`;
       });
@@ -341,6 +484,9 @@ function renderTree() {
     }
     h += `</div>`;
   });
+  if (!isAdmin) {
+    h += `<div style="text-align:center;margin-top:20px;"><button class="btn btn-secondary" onclick="toggleAdmin()" style="font-size:13px;padding:6px 16px;">🔒 管理员登录</button></div>`;
+  }
   el.innerHTML = h;
 }
 
@@ -351,10 +497,13 @@ function renderTreeWorks(ci,si) {
   works.forEach((w,wi)=>{
     h += `<div class="tree-work" onclick="readWork(${ci},${si},${wi})">`;
     h += `<span class="tw-title">${esc(w.title)}</span>`;
-    h += `<span class="tw-actions">`;
-    h += `<button onclick="event.stopPropagation();openWorkEditor(${ci},${si},${wi})" title="编辑"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
-    h += `<button class="del" onclick="event.stopPropagation();deleteWork(${ci},${si},${wi})" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>`;
-    h += `</span></div>`;
+    if (isAdmin) {
+      h += `<span class="tw-actions">`;
+      h += `<button onclick="event.stopPropagation();openWorkEditor(${ci},${si},${wi})" title="编辑"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
+      h += `<button class="del" onclick="event.stopPropagation();deleteWork(${ci},${si},${wi})" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>`;
+      h += `</span>`;
+    }
+    h += `</div>`;
   });
   h += `</div>`;
   return h;
@@ -371,22 +520,28 @@ function renderTreeSeries(ci,si) {
     h += `<span class="se-arrow ${se.open?'open':''}">▸</span>`;
     h += `<span class="se-name">${esc(se.name)}</span>`;
     h += `</div>`;
-    h += `<span class="se-actions">`;
-    h += `<button onclick="event.stopPropagation();showChapterCards(${ci},${si},${sei})" title="查看章节"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
-    h += `<button onclick="event.stopPropagation();openSeriesEditor(${ci},${si},${sei})" title="编辑"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
-    h += `<button class="del" onclick="event.stopPropagation();deleteSeries(${ci},${si},${sei})" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>`;
-    h += `</span></div>`;
+    if (isAdmin) {
+      h += `<span class="se-actions">`;
+      h += `<button onclick="event.stopPropagation();showChapterCards(${ci},${si},${sei})" title="查看章节"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
+      h += `<button onclick="event.stopPropagation();openSeriesEditor(${ci},${si},${sei})" title="编辑"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
+      h += `<button class="del" onclick="event.stopPropagation();deleteSeries(${ci},${si},${sei})" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>`;
+      h += `</span>`;
+    }
+    h += `</div>`;
     if(se.open) {
       h += `<div class="tree-chapters">`;
       se.chapters.forEach((ch,chi)=>{
         h += `<div class="series-chapter" onclick="readChapter(${ci},${si},${sei},${chi})">`;
         h += `<span class="sch-title">${esc(ch.title)}</span>`;
-        h += `<span class="sch-actions">`;
-        h += `<button onclick="event.stopPropagation();openChapterEditor(${ci},${si},${sei},${chi})" title="编辑"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
-        h += `<button class="del" onclick="event.stopPropagation();deleteChapter(${ci},${si},${sei},${chi})" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>`;
-        h += `</span></div>`;
+        if (isAdmin) {
+          h += `<span class="sch-actions">`;
+          h += `<button onclick="event.stopPropagation();openChapterEditor(${ci},${si},${sei},${chi})" title="编辑"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
+          h += `<button class="del" onclick="event.stopPropagation();deleteChapter(${ci},${si},${sei},${chi})" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>`;
+          h += `</span>`;
+        }
+        h += `</div>`;
       });
-      h += `<div class="add-row" onclick="openChapterEditor(${ci},${si},${sei})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>添加章节</div>`;
+      if (isAdmin) h += `<div class="add-row" onclick="openChapterEditor(${ci},${si},${sei})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>添加章节</div>`;
       h += `</div>`;
     }
     h += `</div>`;
@@ -408,15 +563,17 @@ function showCards(ci,si){
 function renderCardGrid(){
   const works=structure[appState.ci].children[appState.si].works;
   const grid=document.getElementById('cardGrid');
-  if(!works.length){ grid.innerHTML=`<div class="card-empty">暂无作品，点击上方「+」按钮添加</div>`; return; }
+  if(!works.length){ grid.innerHTML=`<div class="card-empty">暂无作品</div>`; return; }
   let h='';
   works.forEach((w,wi)=>{
     const sum = w.summary ? esc(w.summary) : (w.content?esc(w.content.slice(0,80))+(w.content.length>80?'...':''):'暂无简介');
     h+=`<div class="card" onclick="readWork(${appState.ci},${appState.si},${wi})">`;
-    h+=`<div class="card-actions">`;
-    h+=`<button onclick="event.stopPropagation();openWorkEditor(${appState.ci},${appState.si},${wi})" title="编辑"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
-    h+=`<button class="del" onclick="event.stopPropagation();deleteWork(${appState.ci},${appState.si},${wi})" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>`;
-    h+=`</div>`;
+    if (isAdmin) {
+      h+=`<div class="card-actions">`;
+      h+=`<button onclick="event.stopPropagation();openWorkEditor(${appState.ci},${appState.si},${wi})" title="编辑"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
+      h+=`<button class="del" onclick="event.stopPropagation();deleteWork(${appState.ci},${appState.si},${wi})" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>`;
+      h+=`</div>`;
+    }
     h+=`<div class="card-title">${esc(w.title)}</div>`;
     h+=`<div class="card-summary">${sum}</div>`;
     h+=`</div>`;
@@ -433,7 +590,7 @@ function showSeries(ci,si){
 function renderSeriesList(){
   const series=structure[appState.ci].children[appState.si].series;
   const el=document.getElementById('seriesList');
-  if(!series.length){ el.innerHTML=`<div class="card-empty">暂无系列，点击上方「+」按钮添加</div>`; return; }
+  if(!series.length){ el.innerHTML=`<div class="card-empty">暂无系列</div>`; return; }
   let h='';
   series.forEach((se,sei)=>{
     h+=`<div class="series-card">`;
@@ -442,22 +599,28 @@ function renderSeriesList(){
     h+=`<span class="sc-arrow ${se.open?'open':''}">▸</span>`;
     h+=`<span class="sc-name">${esc(se.name)}</span>`;
     h+=`</div>`;
-    h+=`<span class="sc-actions">`;
-    h+=`<button onclick="event.stopPropagation();showChapterCards(${appState.ci},${appState.si},${sei})" title="查看章节"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
-    h+=`<button onclick="event.stopPropagation();openSeriesEditor(${appState.ci},${appState.si},${sei})" title="编辑"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
-    h+=`<button class="del" onclick="event.stopPropagation();deleteSeries(${appState.ci},${appState.si},${sei})" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>`;
-    h+=`</span></div>`;
+    if (isAdmin) {
+      h+=`<span class="sc-actions">`;
+      h+=`<button onclick="event.stopPropagation();showChapterCards(${appState.ci},${appState.si},${sei})" title="查看章节"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
+      h+=`<button onclick="event.stopPropagation();openSeriesEditor(${appState.ci},${appState.si},${sei})" title="编辑"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
+      h+=`<button class="del" onclick="event.stopPropagation();deleteSeries(${appState.ci},${appState.si},${sei})" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>`;
+      h+=`</span>`;
+    }
+    h+=`</div>`;
     if(se.open){
       h+=`<div class="series-card-body">`;
       se.chapters.forEach((ch,chi)=>{
         h+=`<div class="series-chapter" onclick="readChapter(${appState.ci},${appState.si},${sei},${chi})">`;
         h+=`<span class="sch-title">${esc(ch.title)}</span>`;
-        h+=`<span class="sch-actions">`;
-        h+=`<button onclick="event.stopPropagation();openChapterEditor(${appState.ci},${appState.si},${sei},${chi})" title="编辑"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
-        h+=`<button class="del" onclick="event.stopPropagation();deleteChapter(${appState.ci},${appState.si},${sei},${chi})" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>`;
-        h+=`</span></div>`;
+        if (isAdmin) {
+          h+=`<span class="sch-actions">`;
+          h+=`<button onclick="event.stopPropagation();openChapterEditor(${appState.ci},${appState.si},${sei},${chi})" title="编辑"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
+          h+=`<button class="del" onclick="event.stopPropagation();deleteChapter(${appState.ci},${appState.si},${sei},${chi})" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>`;
+          h+=`</span>`;
+        }
+        h+=`</div>`;
       });
-      h+=`<div class="add-row" onclick="openChapterEditor(${appState.ci},${appState.si},${sei})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>添加章节</div>`;
+      if (isAdmin) h+=`<div class="add-row" onclick="openChapterEditor(${appState.ci},${appState.si},${sei})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>添加章节</div>`;
       h+=`</div>`;
     }
     h+=`</div>`;
@@ -477,15 +640,17 @@ function showChapterCards(ci,si,sei){
 function renderChapterGrid(){
   const chs=structure[appState.ci].children[appState.si].series[appState.seriesIndex].chapters;
   const grid=document.getElementById('chapterCardGrid');
-  if(!chs.length){ grid.innerHTML=`<div class="card-empty">暂无章节，点击上方「+」按钮添加</div>`; return; }
+  if(!chs.length){ grid.innerHTML=`<div class="card-empty">暂无章节</div>`; return; }
   let h='';
   chs.forEach((ch,chi)=>{
     const sum=ch.summary?esc(ch.summary):(ch.content?esc(ch.content.slice(0,80))+(ch.content.length>80?'...':''):'暂无简介');
     h+=`<div class="card" onclick="readChapter(${appState.ci},${appState.si},${appState.seriesIndex},${chi})">`;
-    h+=`<div class="card-actions">`;
-    h+=`<button onclick="event.stopPropagation();openChapterEditor(${appState.ci},${appState.si},${appState.seriesIndex},${chi})" title="编辑"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
-    h+=`<button class="del" onclick="event.stopPropagation();deleteChapter(${appState.ci},${appState.si},${appState.seriesIndex},${chi})" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>`;
-    h+=`</div>`;
+    if (isAdmin) {
+      h+=`<div class="card-actions">`;
+      h+=`<button onclick="event.stopPropagation();openChapterEditor(${appState.ci},${appState.si},${appState.seriesIndex},${chi})" title="编辑"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
+      h+=`<button class="del" onclick="event.stopPropagation();deleteChapter(${appState.ci},${appState.si},${appState.seriesIndex},${chi})" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>`;
+      h+=`</div>`;
+    }
     h+=`<div class="card-title">${esc(ch.title)}</div>`;
     h+=`<div class="card-summary">${sum}</div>`;
     h+=`</div>`;
@@ -617,6 +782,7 @@ function saveEditor(){
     } else {
       works.push({title,summary,content});
     }
+    saveData();
     renderTree();
     if(appState.view==='card') renderCardGrid();
   } else if(editState.mode==='series'){
@@ -626,6 +792,7 @@ function saveEditor(){
     } else {
       series.push({name:title,open:false,chapters:[]});
     }
+    saveData();
     renderTree();
     if(appState.view==='series') renderSeriesList();
   } else if(editState.mode==='chapter'){
@@ -635,6 +802,7 @@ function saveEditor(){
     } else {
       chs.push({title,summary,content});
     }
+    saveData();
     renderTree();
     if(appState.view==='series') renderSeriesList();
     if(appState.view==='chapterCard') renderChapterGrid();
@@ -646,6 +814,7 @@ function deleteWork(ci,si,wi){
   const title=structure[ci].children[si].works[wi].title;
   if(!confirm('确定删除「'+title+'」？')) return;
   structure[ci].children[si].works.splice(wi,1);
+  saveData();
   renderTree();
   if(appState.view==='card') renderCardGrid();
 }
@@ -653,6 +822,7 @@ function deleteSeries(ci,si,sei){
   const name=structure[ci].children[si].series[sei].name;
   if(!confirm('确定删除系列「'+name+'」及其所有章节？')) return;
   structure[ci].children[si].series.splice(sei,1);
+  saveData();
   renderTree();
   if(appState.view==='series') renderSeriesList();
 }
@@ -660,6 +830,7 @@ function deleteChapter(ci,si,sei,chi){
   const title=structure[ci].children[si].series[sei].chapters[chi].title;
   if(!confirm('确定删除章节「'+title+'」？')) return;
   structure[ci].children[si].series[sei].chapters.splice(chi,1);
+  saveData();
   renderTree();
   if(appState.view==='series') renderSeriesList();
   if(appState.view==='chapterCard') renderChapterGrid();
@@ -668,6 +839,7 @@ function deleteChapter(ci,si,sei,chi){
 function esc(str){ const d=document.createElement('div'); d.textContent=str||''; return d.innerHTML; }
 function escAttr(str){ return (str||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
+loadData();
 renderTree();
 </script>
 </body>
