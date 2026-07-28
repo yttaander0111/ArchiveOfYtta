@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>鱼的作品集归档 | ArchiveOfYtta</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #f0f6fb;
+      color: #1a1a2e;
+      line-height: 1.6;
+      padding: 20px;
+    }
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 32px;
+      padding: 24px 0;
+    }
+    header h1 {
+      font-size: 32px;
+      font-weight: 500;
+      color: #1e3a5f;
+      margin-bottom: 6px;
+      letter-spacing: 3px;
+    }
+    header p {
+      font-size: 14px;
+      color: #7a9ab8;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 1px;
+    }
+    .category {
+      margin-bottom: 8px;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(30, 58, 95, 0.06);
+    }
+    .cat-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 18px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s ease;
+    }
+    .cat-header:hover { background: #e8f1f8; }
+    .cat-arrow {
+      font-size: 12px;
+      color: #5a8ab8;
+      transition: transform 0.2s ease;
+      display: inline-block;
+    }
+    .cat-arrow.open { transform: rotate(90deg); }
+    .cat-name {
+      font-size: 16px;
+      font-weight: 500;
+      color: #1e3a5f;
+    }
+    .sub-list {
+      padding: 0 18px 12px 44px;
+    }
+    .sub-item {
+      margin-bottom: 4px;
+    }
+    .sub-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-radius: 8px;
+      transition: background 0.15s ease;
+    }
+    .sub-header:hover { background: #f5f9fd; }
+    .sub-name {
+      font-size: 14px;
+      color: #4a6a8a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sub-name svg { flex-shrink: 0; }
+    .btn-icon {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 6px;
+      color: #a0b8d0;
+      opacity: 0;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .sub-header:hover .btn-icon { opacity: 1; }
+    .btn-icon:hover { color: #1e3a5f; background: #e0ecf6; }
+    .works-list {
+      padding-left: 24px;
+      padding-bottom: 4px;
+    }
+    .work-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .work-item:hover { background: #eef4fa; }
+    .work-item:hover .work-actions { opacity: 1; }
+    .work-title-text {
+      font-size: 13px;
+      color: #5a7a9a;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .work-actions {
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      display: flex;
+      gap: 2px;
+    }
+    .work-actions button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 3px;
+      border-radius: 4px;
+      color: #a0b8d0;
+      display: flex;
+      align-items: center;
+    }
+    .work-actions button:hover { color: #1e3a5f; background: #dbe8f4; }
+    .work-actions button.delete:hover { color: #c45c5c; background: #fce8e8; }
+
+    /* 编辑器 */
+    .editor-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(30, 58, 95, 0.35);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+    .editor-overlay.active { display: flex; }
+    .editor-panel {
+      background: #fff;
+      border-radius: 14px;
+      max-width: 520px;
+      width: 100%;
+      box-shadow: 0 12px 40px rgba(30, 58, 95, 0.15);
+      overflow: hidden;
+    }
+    .editor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 22px;
+      border-bottom: 1px solid #e4edf5;
+    }
+    .editor-header span {
+      font-size: 16px;
+      font-weight: 500;
+      color: #1e3a5f;
+    }
+    .editor-header button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 6px;
+      color: #a0b8d0;
+    }
+    .editor-header button:hover { color: #1e3a5f; }
+    .editor-body {
+      padding: 18px 22px;
+    }
+    .editor-body input, .editor-body textarea {
+      width: 100%;
+      padding: 10px 14px;
+      margin-bottom: 10px;
+      border: 1px solid #d0e0f0;
+      border-radius: 10px;
+      font-size: 14px;
+      background: #fafcfe;
+      color: #1a1a2e;
+      outline: none;
+      font-family: inherit;
+      transition: border-color 0.15s ease;
+    }
+    .editor-body input:focus, .editor-body textarea:focus {
+      border-color: #5a9bd5;
+    }
+    .editor-body textarea { resize: vertical; min-height: 100px; }
+    .editor-footer {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      padding: 0 22px 18px;
+    }
+    .btn {
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s ease;
+    }
+    .btn-secondary {
+      background: #f0f6fb;
+      color: #5a7a9a;
+      border: 1px solid #d0e0f0;
+    }
+    .btn-secondary:hover { background: #e4edf5; }
+    .btn-primary {
+      background: #1e3a5f;
+      color: #fff;
+    }
+    .btn-primary:hover { background: #2a4a75; }
+
+    /* 查看弹窗 */
+    .viewer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(30, 58, 95, 0.35);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+    .viewer-overlay.active { display: flex; }
+    .viewer-panel {
+      background: #fff;
+      border-radius: 14px;
+      max-width: 560px;
+      width: 100%;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 12px 40px rgba(30, 58, 95, 0.15);
+      overflow: hidden;
+    }
+    .viewer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 22px;
+      border-bottom: 1px solid #e4edf5;
+    }
+    .viewer-header span {
+      font-size: 16px;
+      font-weight: 500;
+      color: #1e3a5f;
+    }
+    .viewer-header button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 6px;
+      color: #a0b8d0;
+    }
+    .viewer-header button:hover { color: #1e3a5f; }
+    .viewer-body {
+      padding: 22px;
+      overflow: auto;
+      flex: 1;
+    }
+    .viewer-body pre {
+      font-size: 14px;
+      color: #4a6a8a;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: inherit;
+    }
+    .viewer-body .empty {
+      color: #a0b8d0;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>鱼的作品集归档</h1>
+      <p>ArchiveOfYtta</p>
+    </header>
+    <div id="tree"></div>
+  </div>
+
+  <!-- 编辑器 -->
+  <div class="editor-overlay" id="editorOverlay" onclick="if(event.target===this)closeEditor()">
+    <div class="editor-panel">
+      <div class="editor-header">
+        <span id="editorTitle">添加作品</span>
+        <button onclick="closeEditor()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="editor-body">
+        <input type="text" id="workTitle" placeholder="作品标题">
+        <textarea id="workContent" placeholder="作品内容（可选）"></textarea>
+      </div>
+      <div class="editor-footer">
+        <button class="btn btn-secondary" onclick="closeEditor()">取消</button>
+        <button class="btn btn-primary" onclick="saveWork()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 查看器 -->
+  <div class="viewer-overlay" id="viewerOverlay" onclick="if(event.target===this)closeViewer()">
+    <div class="viewer-panel">
+      <div class="viewer-header">
+        <span id="viewerTitle"></span>
+        <button onclick="closeViewer()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="viewer-body">
+        <pre id="viewerContent"></pre>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const structure = [
+      {
+        name: '同人',
+        open: true,
+        children: [
+          { name: '短篇同人', works: [] },
+          { name: '长篇同人', works: [] }
+        ]
+      },
+      {
+        name: '原创',
+        open: true,
+        children: [
+          { name: '短篇小说', works: [] },
+          { name: '长篇小说', works: [] },
+          { name: '诗歌', works: [] },
+          { name: '散文随笔', works: [] }
+        ]
+      }
+    ];
+
+    let currentCat = null;
+    let currentWorkIndex = -1;
+
+    function render() {
+      const tree = document.getElementById('tree');
+      let html = '';
+      structure.forEach((cat, ci) => {
+        html += `<div class="category">`;
+        html += `<div class="cat-header" onclick="toggleCat(${ci})">`;
+        html += `<span class="cat-arrow ${cat.open ? 'open' : ''}">▸</span>`;
+        html += `<span class="cat-name">${cat.name}</span>`;
+        html += `</div>`;
+        if (cat.open) {
+          html += `<div class="sub-list">`;
+          cat.children.forEach((sub, si) => {
+            html += `<div class="sub-item">`;
+            html += `<div class="sub-header">`;
+            html += `<span class="sub-name">`;
+            html += `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7a9ab8" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+            html += `${sub.name}</span>`;
+            html += `<button class="btn-icon" onclick="event.stopPropagation();openAdd(${ci},${si})" title="添加作品">`;
+            html += `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+            html += `</button>`;
+            html += `</div>`;
+            if (sub.works.length > 0) {
+              html += `<div class="works-list">`;
+              sub.works.forEach((work, wi) => {
+                html += `<div class="work-item">`;
+                html += `<span class="work-title-text" onclick="viewWork(${ci},${si},${wi})">${escapeHtml(work.title)}</span>`;
+                html += `<span class="work-actions">`;
+                html += `<button onclick="event.stopPropagation();openEdit(${ci},${si},${wi})" title="编辑">`;
+                html += `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+                html += `</button>`;
+                html += `<button class="delete" onclick="event.stopPropagation();deleteWork(${ci},${si},${wi})" title="删除">`;
+                html += `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>`;
+                html += `</button>`;
+                html += `</span>`;
+                html += `</div>`;
+              });
+              html += `</div>`;
+            }
+            html += `</div>`;
+          });
+          html += `</div>`;
+        }
+        html += `</div>`;
+      });
+      tree.innerHTML = html;
+    }
+
+    function toggleCat(ci) {
+      structure[ci].open = !structure[ci].open;
+      render();
+    }
+
+    function openAdd(ci, si) {
+      currentCat = { ci, si };
+      currentWorkIndex = -1;
+      document.getElementById('editorTitle').textContent = '添加作品 — ' + structure[ci].children[si].name;
+      document.getElementById('workTitle').value = '';
+      document.getElementById('workContent').value = '';
+      document.getElementById('editorOverlay').classList.add('active');
+      document.getElementById('workTitle').focus();
+    }
+
+    function openEdit(ci, si, wi) {
+      currentCat = { ci, si };
+      currentWorkIndex = wi;
+      const work = structure[ci].children[si].works[wi];
+      document.getElementById('editorTitle').textContent = '编辑作品 — ' + work.title;
+      document.getElementById('workTitle').value = work.title;
+      document.getElementById('workContent').value = work.content || '';
+      document.getElementById('editorOverlay').classList.add('active');
+    }
+
+    function closeEditor() {
+      document.getElementById('editorOverlay').classList.remove('active');
+      currentCat = null;
+      currentWorkIndex = -1;
+    }
+
+    function saveWork() {
+      const title = document.getElementById('workTitle').value.trim();
+      if (!title) { alert('请输入作品标题'); return; }
+      const content = document.getElementById('workContent').value.trim();
+      const works = structure[currentCat.ci].children[currentCat.si].works;
+      if (currentWorkIndex >= 0) {
+        works[currentWorkIndex] = { title, content };
+      } else {
+        works.push({ title, content });
+      }
+      closeEditor();
+      render();
+    }
+
+    function deleteWork(ci, si, wi) {
+      const title = structure[ci].children[si].works[wi].title;
+      if (!confirm('确定要删除「' + title + '」吗？')) return;
+      structure[ci].children[si].works.splice(wi, 1);
+      render();
+    }
+
+    function viewWork(ci, si, wi) {
+      const work = structure[ci].children[si].works[wi];
+      document.getElementById('viewerTitle').textContent = work.title;
+      const contentEl = document.getElementById('viewerContent');
+      if (work.content) {
+        contentEl.textContent = work.content;
+        contentEl.classList.remove('empty');
+      } else {
+        contentEl.textContent = '暂无内容';
+        contentEl.classList.add('empty');
+      }
+      document.getElementById('viewerOverlay').classList.add('active');
+    }
+
+    function closeViewer() {
+      document.getElementById('viewerOverlay').classList.remove('active');
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    render();
+  </script>
+</body>
+</html>
